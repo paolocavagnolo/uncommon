@@ -1,10 +1,10 @@
 #include <Encoder.h>
 
-Encoder myEnc(5, 6);
+Encoder myEnc(8, 9);
 int oldEnc;
 int encVal;
 
-#define btnPin 7
+#define btnPin 10
 
 #include <WiFiS3.h>
 
@@ -40,7 +40,7 @@ enc_message encData;
 int state = 0;
 bool btnEn = false;
 unsigned long tPress = 0;
-bool btnGo = false;
+bool btnGo = true;
 bool btnLong = false;
 
 bool change = false;
@@ -56,7 +56,7 @@ void setup() {
 
   WiFi.config(serverIP, gatewayIP, subnetIP);
   status = WiFi.beginAP(ssid, pass);
-  delay(1000);
+  delay(5000);
 
   Udp.begin(udpPort);
   IPAddress IP = WiFi.localIP();
@@ -76,23 +76,92 @@ void loop() {
 
   if (btnGo) {
     btnGo = false;
-    encData.enc_val = -100001;
+
+    myEnc.write(20*4);
+    encVal = 20;
+
+    if (state >= 4) {
+      state = 0;
+    } else {
+      state++;
+    }
+    
+    encData.enc_val = -100001 - state;
     sendUdp();
   }
 
   if (btnLong) {
     btnLong = false;
-    encData.enc_val = -100002;
+    myEnc.write(0);
+    encVal = 0;
+    state = 5;
+    encData.enc_val = -200000;
     Serial.println("long");
     sendUdp();
+    oldEnc = encVal;
   }
 
   if (oldEnc != encVal) {
+    if (state == 0) {
+      if (encVal < 1) {
+        encVal = 1;
+        myEnc.write(encVal*4);
+      }
+      if (encVal > 50) {
+        encVal = 50;
+        myEnc.write(encVal*4);
+      }
+    } else if (state == 1) {
+      if (encVal < 1) {
+        encVal = 1;
+        myEnc.write(encVal*4);
+      }
+      if (encVal > 100) {
+        encVal = 100;
+        myEnc.write(encVal*4);
+      }
+    } else if (state == 2) {
+      if (encVal < 1) {
+        encVal = 1;
+        myEnc.write(encVal*4);
+      }
+      if (encVal > 100) {
+        encVal = 100;
+        myEnc.write(encVal*4);
+      }
+    } else if (state == 3) {
+      if (encVal < 1) {
+        encVal = 1;
+        myEnc.write(encVal*4);
+      }
+      if (encVal > 50) {
+        encVal = 50;
+        myEnc.write(encVal*4);
+      }
+    } else if (state == 4) {
+      if (encVal < 1) {
+        encVal = 1;
+        myEnc.write(encVal*4);
+      }
+      if (encVal > 100) {
+        encVal = 100;
+        myEnc.write(encVal*4);
+      }
+    } else if (state == 5) {
+      if (encVal < 0) {
+        encVal = 0;
+        myEnc.write(encVal*4);
+      }
+      if (encVal > 4) {
+        encVal = 4;
+        myEnc.write(encVal*4);
+      }
+    }
+
     encData.enc_val = encVal;
 
     change = true;
     tChange = millis();
-
     oldEnc = encVal;
   }
 
@@ -138,5 +207,5 @@ void sendUdp() {
 }
 
 void readEnc() {
-  encVal = myEnc.read()/4;
+  encVal = myEnc.read() / 4;
 }

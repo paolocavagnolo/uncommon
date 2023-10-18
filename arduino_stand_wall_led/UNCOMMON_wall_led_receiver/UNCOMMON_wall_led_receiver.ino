@@ -290,15 +290,10 @@ void readUdp() {
     Udp.read(receiveBuffer, sizeof(encData));
     memcpy(&encData, receiveBuffer, sizeof(encData));
 
-    if ((encData.enc_val != -100001) && (encData.enc_val != -100002)) {
+    if (encData.enc_val > -100000) {
+      // encoder rotation
       if (changeColor) {
-        hue += encData.enc_val - oldVal;
-        if (hue > 4) {
-          hue = 0;
-        }
-        if (hue < 0) {
-          hue = 4;
-        }
+        hue = encData.enc_val;
         switch (hue) {
           case 0:
             apgreen = CRGB(100, 255, 20);
@@ -319,92 +314,55 @@ void readUdp() {
             break;
         }
         EEPROM.write(adds[5], hue);
-        oldVal = encData.enc_val;
       } else {
         if (state == 0) {
-          speed += (encData.enc_val - oldVal);
-          if (speed < 1) {
-            speed = 1;
-          }
-          if (speed > 50) {
-            speed = 50;
-          }
+          speed = encData.enc_val;
           EEPROM.write(adds[0], speed);
         } else if (state == 1) {
-          dWave += (encData.enc_val - oldVal);
-          if (dWave < 1) {
-            dWave = 1;
-          }
-          if (dWave > 100) {
-            dWave = 100;
-          }
+          dWave = encData.enc_val;
           EEPROM.write(adds[1], dWave);
         } else if (state == 2) {
-          dRain += (encData.enc_val - oldVal);
-          if (dRain < 1) {
-            dRain = 1;
-          }
-          if (dRain > 100) {
-            dRain = 100;
-          }
+          dRain = encData.enc_val;
           EEPROM.write(adds[2], dRain);
         } else if (state == 3) {
-          dFire += (encData.enc_val - oldVal);
-          if (dFire < 1) {
-            dFire = 1;
-          }
-          if (dFire > 50) {
-            dFire = 50;
-          }
+          dFire = encData.enc_val;
           EEPROM.write(adds[3], dFire);
         } else if (state == 4) {
-          dFlick += (encData.enc_val - oldVal);
-          if (dFlick < 1) {
-            dFlick = 1;
-          }
-          if (dFlick > 100) {
-            dFlick = 100;
-          }
+          dFlick = encData.enc_val;
           EEPROM.write(adds[4], dFlick);
         }
-        oldVal = encData.enc_val;
       }
+      oldVal = encData.enc_val;
     } else {
-      if (encData.enc_val == -100001) {
+      if (encData.enc_val == -200000) {
+        // button long
+        changeColor = true;
+      } else {
+        // button short
         changeColor = false;
-        switch (state) {
-          case 0:
-            firstWave = true;
-            dWave = EEPROM.read(adds[1]);
-            state = 1;
-            break;
-          case 1:
-            firstRain = true;
-            dRain = EEPROM.read(adds[2]);
-            state = 2;
-            break;
-          case 2:
-            firstFire = true;
-            dFire = EEPROM.read(adds[3]);
-            state = 3;
-            break;
-          case 3:
-            firstFlicker = true;
-            dFlick = EEPROM.read(adds[4]);
-            state = 4;
-            break;
-          case 4:
-            firstNoise = true;
-            speed = EEPROM.read(adds[0]);
-            state = 0;
-            break;
-          default:
-            break;
+        state = (encData.enc_val + 100001)*-1;
+        if (state == 0) {
+          firstNoise = true;
+          speed = 20;
+          EEPROM.write(adds[0], speed);
+        } else if (state == 1) {
+          firstWave = true;
+          dWave = 20;
+          EEPROM.write(adds[1], dWave);
+        } else if (state == 2) {
+          firstRain = true;
+          dRain = 20;
+          EEPROM.write(adds[2], dRain);
+        } else if (state == 3) {
+          firstFire = true;
+          dFire = 20;
+          EEPROM.write(adds[3], dFire);
+        } else if (state == 4) {
+          firstFlicker = true;
+          dFlick = 20;
+          EEPROM.write(adds[4], dFlick);
         }
         EEPROM.write(adds[6], state);
-      } else {
-        //LONG
-        changeColor = true;
       }
     }
   }
@@ -412,6 +370,7 @@ void readUdp() {
 
 void noise_wave() {
   if (firstNoise) {
+    Serial.println("noise");
     SetupPurpleAndGreenPalette();
     firstNoise = false;
   }
@@ -426,6 +385,7 @@ void rain() {
 
     if (firstRain) {
       firstRain = false;
+      Serial.println("Rain");
       FastLED.clear();
       for (uint8_t i = 0; i < kMatrixHeight; i++) {
         rainIdx[i] = random(kMatrixWidth);
@@ -455,6 +415,7 @@ bool flickFlag[20];
 
 void flicker() {
   if (firstFlicker) {
+    Serial.println("flicker");
     firstFlicker = false;
     for (uint8_t i = 0; i < 20; i++) {
       flickIdx[i] = random(NUM_LEDS);
@@ -495,6 +456,7 @@ void wave() {
     tWave = millis();
     if (firstWave) {
       firstWave = false;
+      Serial.println("wave");
       for (uint8_t i = 0; i < 8; i++) {
         w[i] = dim8_raw(sin8(i * 28));
       }
@@ -524,6 +486,7 @@ void wave() {
 void Fire() {
   if (firstFire) {
     firstFire = false;
+    Serial.println("Fire");
   }
 
   if ((millis() - tFire) > dFire) {
