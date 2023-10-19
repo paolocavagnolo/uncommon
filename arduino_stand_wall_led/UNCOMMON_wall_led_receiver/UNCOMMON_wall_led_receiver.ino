@@ -18,7 +18,6 @@ int status = WL_IDLE_STATUS;
 unsigned int udpPort = 2390;
 WiFiUDP Udp;
 
-
 // 192.48.56.1    MASTER
 // 192.48.56.11   WL_1
 // 192.48.56.12   WL_2
@@ -27,7 +26,9 @@ WiFiUDP Udp;
 // 192.48.56.15   WL_5
 // 192.48.56.16   WL_6
 
-IPAddress remoteIP = IPAddress(192, 48, 56, 16);
+#define BOARD_ID 16
+
+IPAddress remoteIP = IPAddress(192, 48, 56, BOARD_ID);
 IPAddress l_ip;
 
 char receiveBuffer[1024];
@@ -151,12 +152,14 @@ uint8_t state;
 
 bool changeColor = false;
 
+int shift = 0;
+
 void setup() {
 
   Serial.begin(115200);
   delay(1000);
 
-  randomSeed(analogRead(0) + analogRead(1) + analogRead(2) + analogRead(3) + analogRead(4) + analogRead(5));
+  randomSeed(BOARD_ID);
 
   hue = 0;
   hole = 250;
@@ -208,6 +211,8 @@ void setup() {
     default:
       break;
   }
+
+  shift = random(255);
 }
 
 void loop() {
@@ -234,7 +239,6 @@ void loop() {
       flicker();
     }
   }
-
 
   if ((millis() - tFPS) > 33) {
     tFPS = millis();
@@ -340,7 +344,7 @@ void readUdp() {
       } else {
         // button short
         changeColor = false;
-        state = (encData.enc_val + 100001)*-1;
+        state = (encData.enc_val + 100001) * -1;
         if (state == 0) {
           firstNoise = true;
           speed = 20;
@@ -535,7 +539,7 @@ void fillnoise8() {
     for (int j = 0; j < MAX_DIMENSION; j++) {
       int joffset = scaleY * j;
 
-      uint8_t data = inoise8(xxx + ioffset, yyy + joffset, zzz);
+      uint8_t data = inoise8(xxx + ioffset + shift, yyy + joffset + shift, zzz + shift);
 
       // The range of the inoise8 function is roughly 16-238.
       // These two operations expand those values out to roughly 0..255
@@ -594,11 +598,11 @@ void mapNoiseToLEDsUsingPalette() {
 }
 
 void SetupPurpleAndGreenPalette() {
-  CRGB black = CRGB::Black;
+  CRGB white = CRGB::White;
 
   currentPalette = CRGBPalette16(
-    apgreen, apgreen, apgreen, apgreen,
-    apgreen, apgreen, apgreen, apgreen,
-    black, black, black, black,
-    black, black, black, black);
+    apgreen, white, white, apgreen,
+    white, white, apgreen, white,
+    white, apgreen, white, white,
+    apgreen, white, white, white);
 }
