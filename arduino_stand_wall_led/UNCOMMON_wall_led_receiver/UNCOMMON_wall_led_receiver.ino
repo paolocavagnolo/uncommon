@@ -26,7 +26,7 @@ WiFiUDP Udp;
 // 192.48.56.15   WL_5
 // 192.48.56.16   WL_6
 
-#define BOARD_ID 16
+#define BOARD_ID 14
 
 IPAddress remoteIP = IPAddress(192, 48, 56, BOARD_ID);
 IPAddress l_ip;
@@ -309,7 +309,7 @@ void readUdp() {
             apgreen = CRGB::Green;
             break;
           case 3:
-            apgreen = CRGB::YellowGreen;
+            apgreen = CRGB(91, 12, 217); //CRGB::YellowGreen; //5B 0C D9
             break;
           case 4:
             apgreen = CRGB::LawnGreen;
